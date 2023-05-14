@@ -360,11 +360,11 @@ begin
   exact add_neg v
 end
 
-def mysmul : ∀ (n : ℕ) (a : F) (v : vector F n), vector F n
+def smul : ∀ (n : ℕ) (a : F) (v : vector F n), vector F n
 | 0       a nil      := nil
-| (n + 1) a (h :: v) := a * h :: (mysmul n a v)
+| (n + 1) a (h :: v) := a * h :: (smul n a v)
 
-instance : has_smul F (vector F n) := ⟨ mysmul n ⟩
-@[simp] lemma smul_mymul {a : F} : a • v = mysmul n a v := rfl
+instance : has_smul F (vector F n) := ⟨ smul n ⟩
+@[simp] lemma smul_mymul {a : F} : a • v = smul n a v := rfl
 
 end vector
