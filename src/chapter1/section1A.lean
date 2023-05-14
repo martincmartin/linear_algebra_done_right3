@@ -4,7 +4,7 @@
 -- definitions and theorems in the book are translated into canonical Lean.
 --
 -- This section contains two parts, the first on complex numbers, the second on
--- vectors.
+-- tuples.
 --
 -- Some of LADR's conventions clash with Lean's.  For example it uses λ as a
 -- scalar variable, whereas Lean uses it to define anonymous functions.  Also,
@@ -206,14 +206,17 @@ example : (a * b)^m = a ^ m * b ^ m := mul_pow a b m
 end example_1_6
 
 /-
-   1.8 vector, length
-   1.10 all vectors of a given length
-   LADR calls them lists, but that has a different meaning in Lean, so we'll
-   call them "vectors" instead.  We could also call them tuples.
+  After reading section 1B, I might want to rename to "tuple."
+  1.8 vector, length
+  1.10 all vectors of a given length
+  LADR calls them lists, but that has a different meaning in Lean, so we'll
+  call them "vectors" instead.  We could also call them tuples.
  -/
 
 universe u
 -- A vector of length n
+-- TODO: rename as tuple, since vector means something else; and use
+-- finset n → F, to avoid recursion & induction.
 inductive vector (α : Type u) : ℕ → Type u
 | nil {}                              : vector 0
 | cons {n : ℕ} (a : α) (v : vector n) : vector (nat.succ n)
@@ -332,15 +335,13 @@ end
 
 -- As with zero, we use recursion when Axler uses ...
 
--- Would like to make n implicit, how do we split on cases of an implicit
--- argument?
 @[simp]
-def neg : ∀ (n : ℕ) (v : vector F n), vector F n
+def neg : ∀ {n : ℕ} (v : vector F n), vector F n
 | 0 nil := nil 
-| (n + 1) (a :: v) := (-a :: neg n v)
+| (n + 1) (a :: v) := (-a :: neg v)
 
-instance : has_neg (vector F n) := ⟨ neg n ⟩
-@[simp] lemma neg_neg {v : vector F n} : -v = neg n v := rfl
+instance : has_neg (vector F n) := ⟨ neg ⟩
+@[simp] lemma neg_neg {v : vector F n} : -v = neg v := rfl
 
 theorem add_neg : v + (- v) = zero n :=
 begin
