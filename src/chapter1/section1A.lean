@@ -14,6 +14,12 @@
 
 import data.real.basic
 import algebra.field.basic
+import init.data.fin.basic
+-- data.matrix.notation imports tuple, so it would be good if we didn't need it
+-- here, but could define our own syntax.
+import data.matrix.notation
+
+import tactic
 
 
 -- 1.1 Definition complex numbers
@@ -206,33 +212,30 @@ example : (a * b)^m = a ^ m * b ^ m := mul_pow a b m
 end example_1_6
 
 /-
-  After reading section 1B, I might want to rename to "tuple."
-  1.8 vector, length
-  1.10 all vectors of a given length
-  LADR calls them lists, but that has a different meaning in Lean, so we'll
-  call them "vectors" instead.  We could also call them tuples.
+  1.8  Definition  tuple, length
+  1.10 all tuples of a given length
+  LADR calls them lists, but that has a different meaning in Lean.  LADR says
+  "Many mathematicians call a list of length n an n-tuple", so we'll call them
+  "tuples".
  -/
 
-universe u
--- A vector of length n
--- TODO: rename as tuple, since vector means something else; and use
--- finset n → F, to avoid recursion & induction.
-inductive vector (α : Type u) : ℕ → Type u
-| nil {}                              : vector 0
-| cons {n : ℕ} (a : α) (v : vector n) : vector (nat.succ n)
+-- A tuple of length n
+-- `fin n` is the subtype of `ℕ` consisting of natural numbers strictly smaller
+-- than `n`.
+@[reducible]
+def tuple (α : Type*) (n : ℕ) := fin n → α
 
-namespace vector
-local notation (name := cons) h :: t := cons h t
+namespace tuple
+
 
 -- 1.9 Example lists versus sets.
-example : 3 :: 5 :: nil ≠ 5 :: 3 :: nil :=
-begin
-  intro h,
-  have h' := (cons.inj h).1,
-  linarith
-end
 
-variables {F : Type*} [field F]
+example : ( ![3, 5] : tuple ℕ 2) ≠ (![5, 3] : tuple ℕ 2) :=
+begin
+  rw function.ne_iff,
+  use 0,
+  simp
+end
 
 example : ({3, 5} : set ℕ) = {5, 3} :=
 begin
@@ -243,128 +246,72 @@ end
 
 -- Note that these are different types, so even trying to write that they are
 -- not equal produces a type error:
-#check cons 4 (cons 4 (cons 4 nil))
-#check cons 4 (cons 4 nil)
+#check ![4, 4, 4]
+#check ![4, 4]
 
--- example : cons 4 (cons 4 (cons 4 nil)) ≠ cons 4 (cons 4 nil) := sorry
 
 example : ({4, 4, 4} : set ℕ) = {4} := by simp
 
 example : ({4, 4} : set ℕ) = {4} := by simp
 
+variables {F : Type*} [field F]
+
 
 -- 1.10
--- We denote F^n as vector F n.
+-- We denote F^n as tuple F n.
 
 -- 1.12  Definition  addition in F^n
 
--- This definition uses features that are more advanced than I would like, since
--- this conversion of LADR is intended for people new to Lean.  Is there a way
--- to simplify it?  I could try taking n out of the type signature.
--- This definition is inspired by section 8.7 of Theorem Proving in Lean, called
--- "Inaccessable Terms."
-@[simp]
-def add : Π { n : ℕ }, (vector F n) → (vector F n) → (vector F n)
-| .(0)     nil           nil         := nil
-| .(n + 1) (@cons .(F) n a₁ v₁) (cons a₂ v₂) := cons (a₁ + a₂) (add v₁ v₂)
+variables {n : ℕ} (x y : tuple F n)
 
-variables {n : ℕ} (x y : vector F n)
-
-instance : has_add (vector F n) := ⟨λ x y, add x y⟩
-@[simp] lemma plus_eq_add {x y : vector F n} : x + y = add x y := rfl
+instance : has_add (tuple F n) := ⟨λ x y i, x i + y i⟩
+@[simp] lemma plus_eq_add : x + y = λ i, x i + y i := rfl
 
 
-example : ((2: ℝ) :: 3 :: nil) + (5 :: 7 :: nil) = (7 :: 10 :: nil) :=
-begin
-  simp,
-  norm_num
-end
+example : ![2, 3] + ![5, 7] = ![7, 10] := by simp
 
 
 -- 1.13  Commutativity of addition in F^n
 
-theorem vector_add_comm : x + y = y + x :=
+theorem tuple_add_comm : x + y = y + x :=
 begin
-  -- Whenever you see ... in math, the proof in Lean is generally by induction
-  -- on the length of the ... list.
-  induction n with n ih,
-  { cases x,
-    cases y,
-    refl},
-  cases x,
-  cases y,
+  funext,
   simp,
-  split,
-  { apply add_comm },
-  apply ih
+  apply add_comm
 end
 
 -- 1.14  Definition 0
 
-@[simp]
-def zero : ∀ n : ℕ, vector F n
-| 0 := nil
-| (n + 1) := (0 : F) :: (zero n)
+instance : has_zero (tuple F n) := ⟨λ i, 0⟩
+@[simp] theorem zero_zero : (0 : tuple F n) = λ i, 0 := rfl
 
-instance : has_zero (vector F n) := ⟨zero n⟩
-
-example : vector.zero 2 = (0:F) :: (0:F) :: nil := rfl
-
-variable v : vector F n
-
-theorem add_zero : ∀ v : vector F n, v + (zero n) = v :=
+example : 0 = ![(0:ℝ), 0] :=
 begin
-  intros v,
-  induction n with n ih,
-  { cases v,
-    dsimp,
-    refl },
-  cases v with _ a v_n,
-  simp,
-  exact ih v_n
+  funext,
+  cases i with val property,
+  interval_cases val,
+  { simp },
+  simp
 end
 
-theorem zero_add : ∀ v : vector F n, (zero n) + v = v :=
-begin
-  intros v,
-  rw vector_add_comm,
-  exact add_zero v
-end
+variable v : tuple F n
+
+
+theorem add_zero : v + 0 = v := by simp
+
+theorem zero_add : 0 + v = v := by simp
+
 
 -- 1.16  Definition  additive inverse in F^n
 
--- As with zero, we use recursion when Axler uses ...
+instance : has_neg (tuple F n) := ⟨ λ v i, - v i⟩
+@[simp] lemma neg_neg {v : tuple F n} : -v = λ i, - v i := rfl
 
-@[simp]
-def neg : ∀ {n : ℕ} (v : vector F n), vector F n
-| 0 nil := nil 
-| (n + 1) (a :: v) := (-a :: neg v)
+theorem add_neg : v + (- v) = 0 := by simp
 
-instance : has_neg (vector F n) := ⟨ neg ⟩
-@[simp] lemma neg_neg {v : vector F n} : -v = neg v := rfl
+theorem neg_add : (- v) + v = 0 := by simp
 
-theorem add_neg : v + (- v) = zero n :=
-begin
-  induction n with n ih,
-  { cases v with n a v_n,
-    dsimp,
-    refl },
-  cases v with n a v_n,
-  simp,
-  exact ih v_n
-end
+instance : has_smul F (tuple F n) := ⟨ λ a v i, a * v i ⟩
+@[simp] lemma smul_mul {a : F} : a • v = λ i, a * v i := rfl
 
-theorem neg_add : (- v) + v = zero n :=
-begin
-  rw vector_add_comm,
-  exact add_neg v
-end
-
-def smul : ∀ (n : ℕ) (a : F) (v : vector F n), vector F n
-| 0       a nil      := nil
-| (n + 1) a (h :: v) := a * h :: (smul n a v)
-
-instance : has_smul F (vector F n) := ⟨ smul n ⟩
-@[simp] lemma smul_mymul {a : F} : a • v = smul n a v := rfl
-
-end vector
+end tuple
