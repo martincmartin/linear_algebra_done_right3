@@ -15,9 +15,8 @@
 import data.real.basic
 import algebra.field.basic
 import init.data.fin.basic
--- data.matrix.notation imports tuple, so it would be good if we didn't need it
--- here, but could define our own syntax.
-import data.matrix.notation
+
+import data.fin.vec_notation
 
 import tactic
 
