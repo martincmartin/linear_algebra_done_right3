@@ -1,8 +1,8 @@
 [package]
 name = "linear_algebra_done_right"
 version = "0.1"
-lean_version = "leanprover-community/lean:3.50.3"
+lean_version = "leanprover-community/lean:3.51.1"
 path = "src"
 
 [dependencies]
-mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "da3fc4a33ff6bc75f077f691dc94c217b8d41559"}
+mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "5bb9fffd23f9f65b367f5d451da18cc60bf47335"}
