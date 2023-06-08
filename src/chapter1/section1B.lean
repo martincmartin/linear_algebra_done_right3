@@ -234,13 +234,11 @@ end
 -- 1.30  A number times the vector 0
 
 theorem field_zero_eq_zero {a : F} : a • (0 : V) = 0 :=
-begin
   calc
     a • (0 : V) = a • 0 + a • 0 - a • 0 : by rw add_sub_cancel
     ...         = a • (0 + 0) - a • 0 : by rw left_distrib
     ...         = a • 0 - a • 0 : by rw add_comm_group.add_zero
     ...         = 0 : by rw sub_self
-end
 
 
 -- 1.31  The number -1 times a vector
